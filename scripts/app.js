@@ -436,7 +436,7 @@ assetFormInput.prop("disabled", true);
 window.addEventListener('load', async () => {
     // New ethereum provider
     if (window.ethereum) {
-        console.log("New ethereum provider detected");
+        console.log("New Ocash testnet provider detected");
         // Instance web3 with the provided information
         web3 = new Web3(window.ethereum);
         // ask user for permission
@@ -475,7 +475,7 @@ window.addEventListener('load', async () => {
     // No web3 provider
     else {
         console.log('No web3 provider detected || web3 not exits');
-        metamaskStatus.html('You do not appear to be connected to any Ethereum network. To use this service and deploy your contract, we recommend using the <a href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn?hl=en">MetaMask</a> plugin for Google Chrome, which allows your web browser to connect to an Ethereum network.').show();
+        metamaskStatus.html('You do not appear to be connected to any Ocash testnet network. To use this service and deploy your contract, we recommend using the <a href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn?hl=en">MetaMask</a> plugin for Google Chrome, which allows your web browser to connect to an Ocash testnet network.').show();
     }
 });
 
@@ -511,25 +511,20 @@ function start() {
     metamaskStatus.hide()
     // metamaskEvents()
     getEthNetworkId()
-        .then(function (networkId) {
-            if (networkId === '1') {
-                isMainNetwork = true;
-                currentNetwork.text('You are currently at Mainnet').show();
-            } else if (networkId === '3') {
-                isRopsten = true;
-                currentNetwork.text('Your are currently at Ropsten testnet.').show();
-            } else if (networkId === '4') {
-                isRinkeby = true;
-                currentNetwork.text('Your are currently at Rinkeby testnet.').show();
-            } else if (networkId === '5') {
-                isGoerli = true;
-                currentNetwork.text('Your are currently at Goerli testnet.').show();
-            } else
-                currentNetwork.text('Your current network id is ' + networkId).show();
-        })
-        .fail(function (err) {
-            console.log(err)
-        });
+    .then(function (networkId) {
+        if (networkId === '660868') {
+            // If the network ID is 660868, set a flag and show a status message
+            isOverlineTestnet = true;
+            currentNetwork.text('You are currently on the Ocash Testnet').show();
+        } else {
+            // If the network ID is anything other than 660868, show an error message
+            currentNetwork.text('Please connect to the Ocash Testnet (network ID: 660868)').show();
+        }
+    })
+    .fail(function (err) {
+        console.log(err)
+    });
+
 
     setInterval(function () {
         isLocked()
@@ -558,7 +553,7 @@ function start() {
                 }
             })
             .then(function (balance) {
-                accountAddress.html('<strong>Selected Account: ' + address + ' (' + balance + ' eth)</strong>').show();
+                accountAddress.html('<strong>Selected Account: ' + address + ' (' + balance + ' Ocash)</strong>').show();
             })
             .fail(function (err) {
                 if (err.message !== "Metamask Locked")
@@ -652,56 +647,41 @@ assetForm.submit(function (e) {
         alert('totalSupply can\'t be blank')
     } else {
         //disable all form input fields
-        assetFormInput.prop("disabled", true);
-        statusText.innerHTML = 'Waiting for contract to be deployed...';
-        var standardtokenContract = new web3.eth.Contract(abi);
-        standardtokenContract.deploy({
-            data: '0x' + bytecode,
-            arguments: [initialSupply, tokenName, decimalUnits, tokenSymbol]
-        }).send({
-            from: address
-        }, function (error, transactionHash) {
-            if (error) {
-                console.error(error);
-                assetFormInput.prop("disabled", false);
-                return;
-            }
-            console.log('Transaction Hash :', transactionHash);
-            if (isMainNetwork) {
-                statusText.innerHTML = '<p align="center">Contract deployment is in progress - please be patient. If nothing happens for a while check if there\'s any errors in the console (hit F12).<br> <strong>Transaction hash: </strong><br> <a href="https://etherscan.io/tx/' + transactionHash + '" target="_blank">' + transactionHash + '</a></p>'
-            } else if (isRopsten) {
-                statusText.innerHTML = '<p align="center">Contract deployment is in progress - please be patient. If nothing happens for a while check if there\'s any errors in the console (hit F12). <br> <strong>Transaction hash: </strong><br> <a href="https://ropsten.etherscan.io/tx/' + transactionHash + '" target="_blank">' + transactionHash + '</a></p>'
-            } else if (isRinkeby) {
-                statusText.innerHTML = '<p align="center">Contract deployment is in progress - please be patient. If nothing happens for a while check if there\'s any errors in the console (hit F12). <br> <strong> Transaction hash: </strong><br> <a href="https://rinkeby.etherscan.io/tx/' + transactionHash + '" target="_blank">' + transactionHash + '</a></p>'
-            } else if (isGoerli) {
-                statusText.innerHTML = '<p align="center">Contract deployment is in progress - please be patient. If nothing happens for a while check if there\'s any errors in the console (hit F12). <br> <strong> Transaction hash: </strong><br> <a href="https://goerli.etherscan.io/tx/' + transactionHash + '" target="_blank">' + transactionHash + '</a></p>'
-            } else
-                statusText.innerHTML = 'Contract deployment is in progress - please be patient. If nothing happens for a while check if there\'s any errors in the console (hit F12). Transaction hash: ' + transactionHash
-        }).on('confirmation', function () {
-            return;
-        }).then(function (newContractInstance) {
-            if (!newContractInstance.options.address) {
-                console.log(newContractInstance);
-                return;
-            }
-            console.log('Deployed Contract Address : ', newContractInstance.options.address);
-            var newContractAddress = newContractInstance.options.address;
-            if (isMainNetwork) {
-                statusText.innerHTML = 'Transaction  mined! Contract address: <a href="https://etherscan.io/token/' + newContractAddress + '" target="_blank">' + newContractAddress + '</a>'
-            } else if (isRopsten) {
-                statusText.innerHTML = 'Transaction  mined! Contract address: <a href="https://ropsten.etherscan.io/token/' + newContractAddress + '" target="_blank">' + newContractAddress + '</a>'
-            } else if (isRinkeby) {
-                statusText.innerHTML = 'Transaction  mined! Contract address: <a href="https://rinkeby.etherscan.io/token/' + newContractAddress + '" target="_blank">' + newContractAddress + '</a>'
-            } else if (isGoerli) {
-                statusText.innerHTML = 'Transaction  mined! Contract address: <a href="https://goerli.etherscan.io/token/' + newContractAddress + '" target="_blank">' + newContractAddress + '</a>'
-            } else
-                statusText.innerHTML = 'Contract deployed at address <b>' + newContractAddress + '</b> - keep a record of this.'
-        }).catch(function (error) {
-            console.error(error);
-            assetFormInput.prop("disabled", false);
-        })
-    }
-});
+   // 체크하려는 체인 ID 설정
+   var expectedChainId = 660868;
+
+   web3.eth.getChainId().then(function(chainId) {
+       if(chainId == expectedChainId) {
+           assetFormInput.prop("disabled", true);
+           statusText.innerHTML = 'Waiting for contract to be deployed...';
+           var standardtokenContract = new web3.eth.Contract(abi);
+           standardtokenContract.deploy({
+               data: '0x' + bytecode,
+               arguments: [initialSupply, tokenName, decimalUnits, tokenSymbol]
+           }).send({
+               from: address
+           }).on('transactionHash', function(transactionHash) {
+               console.log('Transaction Hash :', transactionHash);
+               statusText.innerHTML = '<p align="center">Contract deployment is in progress - please be patient. If nothing happens for a while check if there\'s any errors in the console (hit F12).<br> <strong>Transaction hash: </strong><br> <a href="https://info.overlinemc.com/tx/' + transactionHash + '" target="_blank">' + transactionHash + '</a></p>';
+           }).on('confirmation', function (confirmationNumber, receipt) {
+               console.log('Deployed Contract Address : ', receipt.contractAddress);
+               statusText.innerHTML = 'Contract deployed at address <a href="https://info.overlinemc.com/address/' + receipt.contractAddress + '" target="_blank">' + receipt.contractAddress + '</a>';
+           }).then(function (newContractInstance) {
+               // ...
+           }).catch(function (error) {
+               console.error(error);
+               assetFormInput.prop("disabled", false);
+           });
+       } else {
+           // ...
+       }
+   }).catch(function (error) {
+       console.error(error);
+       assetFormInput.prop("disabled", false);
+   })
+       }
+   });
+   
 
 function nthRoot(x, n) {
     if (x < 0 && n % 2 != 1) return NaN; // Not well defined
